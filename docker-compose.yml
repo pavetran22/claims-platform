@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: claims
+      POSTGRES_USER: claims
+      POSTGRES_PASSWORD: claims
+    ports:
+      - "5433:5432"   # 5433 so it doesn't clash with any other local Postgres
+  kafka:
+    image: apache/kafka:3.9.0   # single-node Kafka in KRaft mode, no Zookeeper
+    ports:
+      - "9092:9092"
