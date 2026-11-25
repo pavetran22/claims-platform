@@ -18,3 +18,12 @@ whether I **accepted / challenged / overrode** it, and why.
 - **AI suggested:** A status state machine in one enum, an append-only audit table, NUMERIC money, optimistic locking.
 - **Decision:** Accepted. The brief doesn't name the six markets, so I **assumed** MY, SG, HK, TH, ID, PH, each with its local currency.
 - **Decision:** Exposure will be reported **per currency**, not converted into one total. Converting needs FX rates I don't have, and a made-up rate would give managers a wrong number.
+
+## REST vs Kafka, and the service layer
+
+- **Asked:** Which interactions use REST and which use Kafka.
+- **AI suggested:** REST for every user action (the user waits for an answer: the new claim, or why it was refused). Kafka for what happens *because of* a change — notifications now; payments, fraud checks and reporting later — so those can fail or lag without blocking the claimant or officer.
+- **Decision:** Accepted. Events are published **after** the database commit so consumers never act on a change that was rolled back. Known gap: if the app dies between commit and send, the event is lost; the production fix is a transactional outbox. I've noted it rather than built it, given the time cap.
+- **Decision:** Accepted an idempotent consumer (unique event_id), because Kafka can deliver the same message twice.
+- **Decision:** Dashboards query the database live rather than via Kafka. It's simpler, and always consistent at this scale.
+- **Decision:** Mock auth via headers. Real auth (OIDC/JWT) is out of scope for the time cap; the role checks live in the service, so swapping it in won't change the business rules.
