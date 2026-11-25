@@ -1,0 +1,157 @@
+<header>
+  <h1>Claims Platform</h1>
+  <form class="who" (ngSubmit)="switchUser()">
+    <label>User <input name="user" [(ngModel)]="userId" /></label>
+    <label>Role
+      <select name="role" [(ngModel)]="role">
+        @for (r of roles; track r) { <option [value]="r">{{ r }}</option> }
+      </select>
+    </label>
+    <button type="submit">Switch</button>
+    <button type="button" class="ghost" (click)="refresh()">Refresh</button>
+  </form>
+</header>
+
+@if (error()) { <div class="banner error" (click)="error.set(null)">{{ error() }}</div> }
+@if (flash()) { <div class="banner ok">{{ flash() }}</div> }
+
+<main>
+  <section class="left">
+
+    @if (activeRole() === 'CLAIMANT') {
+      <div class="card">
+        <h2>Report an incident</h2>
+        <form (ngSubmit)="submit()" class="grid">
+          <label>Market
+            <select name="market" [(ngModel)]="form.market">
+              @for (m of markets; track m) { <option [value]="m">{{ m }}</option> }
+            </select>
+          </label>
+          <label>Type
+            <select name="type" [(ngModel)]="form.productType">
+              <option value="MOTOR">Motor</option>
+              <option value="PROPERTY">Property</option>
+            </select>
+          </label>
+          <label>Incident date <input type="date" name="date" [max]="today" [(ngModel)]="form.incidentDate" required /></label>
+          <label>Amount claimed <input type="number" name="amount" min="0.01" step="0.01" [(ngModel)]="form.claimedAmount" required /></label>
+          <label class="wide">What happened? <textarea name="desc" rows="3" [(ngModel)]="form.description" required></textarea></label>
+          <button type="submit" class="wide">Submit claim</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Notifications</h2>
+        @for (n of notifications(); track n.id) {
+          <p class="note">{{ n.message }} <small>{{ n.createdAt | date: 'short' }}</small></p>
+        } @empty { <p class="muted">Nothing yet.</p> }
+      </div>
+    }
+
+    @if (activeRole() !== 'CLAIMANT') {
+      <div class="card">
+        <h2>Unassigned queue <span class="count">{{ queue().length }}</span></h2>
+        @for (c of queue(); track c.id) {
+          <button class="row" [class.active]="selected()?.id === c.id" (click)="select(c)">
+            <b>{{ c.reference }}</b> {{ c.market }} · {{ c.productType | lowercase }}
+            <span class="amt">{{ c.claimedAmount | number: '1.2-2' }} {{ c.currency }}</span>
+          </button>
+        } @empty { <p class="muted">Queue is empty.</p> }
+      </div>
+    }
+
+    @if (activeRole() !== 'MANAGER') {
+      <div class="card">
+        <h2>{{ activeRole() === 'CLAIMANT' ? 'My claims' : 'Assigned to me' }} <span class="count">{{ claims().length }}</span></h2>
+        @for (c of claims(); track c.id) {
+          <button class="row" [class.active]="selected()?.id === c.id" (click)="select(c)">
+            <b>{{ c.reference }}</b> <span class="status s-{{ c.status }}">{{ label(c.status) }}</span>
+            <span class="amt">{{ c.claimedAmount | number: '1.2-2' }} {{ c.currency }}</span>
+          </button>
+        } @empty { <p class="muted">No claims.</p> }
+      </div>
+    }
+
+    @if (activeRole() !== 'CLAIMANT' && workload(); as w) {
+      <div class="card">
+        <h2>Team workload</h2>
+        <table>
+          <tr><th>Officer</th><th>Reviewing</th><th>Info req.</th><th>To settle</th><th>Closed</th><th>Avg days</th></tr>
+          @for (o of w.officers; track o.officerId) {
+            <tr><td>{{ o.officerId }}</td><td>{{ o.underReview }}</td><td>{{ o.infoRequested }}</td>
+              <td>{{ o.awaitingSettlement }}</td><td>{{ o.closed }}</td>
+              <td>{{ o.avgDaysToClose === null ? '–' : (o.avgDaysToClose | number: '1.1-1') }}</td></tr>
+          }
+        </table>
+        <p class="muted">{{ w.unassigned }} claim(s) waiting to be picked up.</p>
+      </div>
+    }
+
+    @if (activeRole() === 'MANAGER') {
+      <div class="card">
+        <h2>Outstanding exposure</h2>
+        <table>
+          <tr><th>Market</th><th>Open claims</th><th>Exposure</th></tr>
+          @for (e of exposure(); track e.market) {
+            <tr><td>{{ e.market }}</td><td>{{ e.openClaims }}</td><td>{{ e.exposure | number: '1.2-2' }} {{ e.currency }}</td></tr>
+          } @empty { <tr><td colspan="3" class="muted">No open claims.</td></tr> }
+        </table>
+        <p class="muted">Per market, in local currency. Approved amount where approved, otherwise amount claimed.</p>
+      </div>
+    }
+  </section>
+
+  <section class="right">
+    @if (selected(); as c) {
+      <div class="card">
+        <h2>{{ c.reference }} <span class="status s-{{ c.status }}">{{ label(c.status) }}</span></h2>
+        <dl>
+          <dt>Claimant</dt><dd>{{ c.claimantId }}</dd>
+          <dt>Market / type</dt><dd>{{ c.market }} · {{ c.productType | lowercase }}</dd>
+          <dt>Incident</dt><dd>{{ c.incidentDate }}</dd>
+          <dt>Claimed</dt><dd>{{ c.claimedAmount | number: '1.2-2' }} {{ c.currency }}</dd>
+          @if (c.approvedAmount !== null) { <dt>Approved</dt><dd>{{ c.approvedAmount | number: '1.2-2' }} {{ c.currency }}</dd> }
+          @if (c.settledAmount !== null) { <dt>Paid</dt><dd>{{ c.settledAmount | number: '1.2-2' }} {{ c.currency }}</dd> }
+          <dt>Officer</dt><dd>{{ c.assignedOfficer ?? 'unassigned' }}</dd>
+        </dl>
+        <p>{{ c.description }}</p>
+
+        <!-- actions shown depend on role and status; the backend enforces the same rules -->
+        @if (activeRole() === 'CLAIMANT' && c.status === 'INFO_REQUESTED') {
+          <div class="actions">
+            <textarea rows="2" placeholder="Your reply" [(ngModel)]="text"></textarea>
+            <button (click)="act('provideInfo')" [disabled]="!text.trim()">Send information</button>
+          </div>
+        }
+        @if (activeRole() === 'OFFICER' && c.status === 'SUBMITTED') {
+          <div class="actions"><button (click)="act('pickUp')">Pick up this claim</button></div>
+        }
+        @if (isMine(c) && c.status === 'UNDER_REVIEW') {
+          <div class="actions">
+            <textarea rows="2" placeholder="Question for the claimant, reason for rejection, or approval note" [(ngModel)]="text"></textarea>
+            <button class="ghost" (click)="act('requestInfo')" [disabled]="!text.trim()">Request info</button>
+            <button class="danger" (click)="act('reject')" [disabled]="!text.trim()">Reject</button>
+            <span class="inline"><input type="number" min="0.01" step="0.01" [(ngModel)]="amount" />
+              <button (click)="act('approve')" [disabled]="!amount">Approve amount</button></span>
+          </div>
+        }
+        @if (isMine(c) && c.status === 'APPROVED') {
+          <div class="actions">
+            <span class="inline"><input type="number" min="0.01" step="0.01" [(ngModel)]="amount" />
+              <button (click)="act('settle')" [disabled]="!amount">Settle (pay)</button></span>
+          </div>
+        }
+
+        <h3>History</h3>
+        <ol class="history">
+          @for (h of history(); track $index) {
+            <li><b>{{ label(h.toStatus) }}</b> by {{ h.actorId }} <small>{{ h.createdAt | date: 'short' }}</small>
+              @if (h.note) { <div class="muted">{{ h.note }}</div> }</li>
+          }
+        </ol>
+      </div>
+    } @else {
+      <div class="card muted">Select a claim to see its details.</div>
+    }
+  </section>
+</main>

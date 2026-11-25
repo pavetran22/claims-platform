@@ -1,0 +1,8 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #f3f4f6; color: #111827; }
+input, select, textarea, button { font: inherit; font-size: 13px; }
+input, select, textarea { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 6px; }
+button { padding: 7px 12px; border-radius: 6px; border: 1px solid #2563eb; background: #2563eb; color: #fff; cursor: pointer; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.ghost { background: #fff; color: #2563eb; }
+button.danger { background: #dc2626; border-color: #dc2626; }
