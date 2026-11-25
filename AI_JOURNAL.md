@@ -34,12 +34,6 @@ whether I **accepted / challenged / overrode** it, and why.
 - **Challenged:** Asked for tests to be isolated.
 - **Fix:** A `test` profile with its own Postgres schema (`claims_test`) and Kafka topic/consumer group. Verified by re-running the tests and the demo: only demo data appears.
 
-## Summary
-
-- Time spent: ~XX minutes (cap: 5 hours).
-- Backend first, as the brief asks; the frontend is a thin client and the backend enforces every rule.
-- Known gaps and next steps are listed in README.md.
-
 ## Challenged: test data leaking into the app
 
 - **Observed:** After running the tests, the demo's workload dashboard listed officers like `officer-05d49e`. The AI's original test setup wrote into the same database and Kafka topic the app uses.
