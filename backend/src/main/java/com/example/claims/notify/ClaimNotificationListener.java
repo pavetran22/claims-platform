@@ -22,7 +22,7 @@ public class ClaimNotificationListener {
         this.json = json;
     }
 
-    @KafkaListener(topics = ClaimEventPublisher.TOPIC, groupId = "notifications")
+    @KafkaListener(topics = ClaimEventPublisher.TOPIC, groupId = "${claims.notifications-group:notifications}")
     @Transactional
     public void onClaimEvent(String payload) {
         ClaimStatusChanged event = json.readValue(payload, ClaimStatusChanged.class);

@@ -17,6 +17,7 @@ import com.example.claims.notify.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,8 +25,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Runs against the real Postgres and Kafka from docker-compose. */
+/** Runs against the real Postgres and Kafka from docker-compose, in a separate schema and topic (test profile). */
 @SpringBootTest
+@ActiveProfiles("test")
 class ClaimLifecycleTest {
 
     @Autowired ClaimService claims;

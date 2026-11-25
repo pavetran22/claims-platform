@@ -27,3 +27,15 @@ whether I **accepted / challenged / overrode** it, and why.
 - **Decision:** Accepted an idempotent consumer (unique event_id), because Kafka can deliver the same message twice.
 - **Decision:** Dashboards query the database live rather than via Kafka. It's simpler, and always consistent at this scale.
 - **Decision:** Mock auth via headers. Real auth (OIDC/JWT) is out of scope for the time cap; the role checks live in the service, so swapping it in won't change the business rules.
+
+## Challenged: test data leaking into the app
+
+- **Observed:** After running the tests, the demo's workload dashboard listed officers like `officer-05d49e`. The AI's original test setup wrote into the same database and Kafka topic the app uses.
+- **Challenged:** Asked for tests to be isolated.
+- **Fix:** A `test` profile with its own Postgres schema (`claims_test`) and Kafka topic/consumer group. Verified by re-running the tests and the demo: only demo data appears.
+
+## Summary
+
+- Time spent: ~XX minutes (cap: 5 hours).
+- Backend first, as the brief asks; the frontend is a thin client and the backend enforces every rule.
+- Known gaps and next steps are listed in README.md.
