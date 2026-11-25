@@ -5,7 +5,7 @@ whether I **accepted / challenged / overrode** it, and why.
 
 ---
 
-## [START TIME] Setup and stack
+## 2026-11-25 09:43 Setup and stack
 
 - **Asked:** Which backend stack to use (C#/.NET or Java/Spring Boot) and how to split the time.
 - **AI suggested:** Java/Spring Boot, one service with clear modules, REST for user actions, Kafka for claim events, Postgres.
